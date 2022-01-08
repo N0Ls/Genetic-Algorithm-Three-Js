@@ -2,6 +2,7 @@ import "./style.css";
 import * as THREE from "three";
 import * as dat from "dat.gui";
 import { Vector2 } from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 // Mouse object
 const mouse = new Vector2();
@@ -280,21 +281,19 @@ document.addEventListener("mousemove", (e) => {
  * Camera
  */
 // Base camera
-const camera = new THREE.OrthographicCamera(
-	-1 * sizes.aspectRatio,
-	1 * sizes.aspectRatio,
-	1,
-	-1,
-	0.01,
-	1000
+// Base camera
+const camera = new THREE.PerspectiveCamera(
+	75,
+	sizes.width / sizes.height,
+	0.1,
+	10000
 );
-camera.position.x = 0;
-camera.position.y = 0;
-camera.position.z = 1;
-camera.rotation.x = 0;
-console.log(camera);
-//camera.lookAt(plane.position);
+camera.position.z = 3;
 scene.add(camera);
+
+// Controls
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
 
 /**
  * Renderer
@@ -325,6 +324,9 @@ const tick = () => {
 
 	// Render
 	renderer.render(scene, camera);
+
+	// Update controls
+	controls.update();
 
 	// Call tick again on the next frame
 	window.requestAnimationFrame(tick);
