@@ -18,7 +18,7 @@ const scene = new THREE.Scene();
 
 // Basic material and geometry
 const basicMaterial = new THREE.MeshStandardMaterial({ color: "#b2b6b1" });
-const squareGeometry = new THREE.BoxBufferGeometry(0.01, 0.01, 0.1);
+const squareGeometry = new THREE.BoxBufferGeometry(0.01, 0.01, 0.01);
 
 const paramsBasic = {
 	color: 0xb2b6b1,
@@ -28,15 +28,18 @@ gui.addColor(paramsBasic, "color").onChange(() => {
 });
 
 // Utils functions
-const getRandomCoordinates = (width, height) => {
+const getRandomCoordinates = (width, height, depth) => {
 	return {
 		x: Math.random() * width * 2 - width,
 		y: Math.random() * height * 2 - height,
+		z: Math.random() * depth * 2 - depth,
 	};
 };
 
-const distanceBetweenTwoPoint = (x1, y1, x2, y2) => {
-	return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+const distanceBetweenTwoPoint = (x1, y1, z1, x2, y2, z2) => {
+	return Math.sqrt(
+		Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2) + Math.pow(z2 - z1, 2)
+	);
 };
 
 // Population Size
@@ -51,6 +54,13 @@ probabilitiesFolder
 	.max(1)
 	.step(0.001);
 const yMutationProbability = { yProbability: 0.3 };
+probabilitiesFolder
+	.add(yMutationProbability, "yProbability")
+	.min(0)
+	.max(1)
+	.step(0.001);
+
+const zMutationProbability = { zProbability: 0.3 };
 probabilitiesFolder
 	.add(yMutationProbability, "yProbability")
 	.min(0)
@@ -77,6 +87,7 @@ class Individual {
 		this.position = {
 			x: position.x,
 			y: position.y,
+			z: position.z,
 		};
 
 		this.fitness = 0;
@@ -86,29 +97,35 @@ class Individual {
 
 		const meshSquare = new THREE.Mesh(squareGeometry, basicMaterial);
 		this.group.add(meshSquare);
-		this.group.position.set(this.position.x, this.position.y, 0);
+		this.group.position.set(this.position.x, this.position.y, this.position.z);
 	}
 
-	setPosition(x, y) {
-		this.position = { x, y };
+	setPosition(x, y, z) {
+		this.position = { x, y, z };
 		this.group.position.x = x;
 		this.group.position.y = y;
+		this.group.position.z = z;
 	}
 
-	setPosition({ x, y }) {
-		this.position = { x, y };
+	setPosition({ x, y, z }) {
+		this.position = { x, y, z };
 		this.group.position.x = x;
 		this.group.position.y = y;
+		this.group.position.z = z;
 	}
 
 	mutate() {
 		const xDraw = Math.random();
 		const yDraw = Math.random();
+		const zDraw = Math.random();
 		if (xDraw < xMutationProbability.xProbability) {
 			Math.random() > 0.5 ? (this.position.x += 0.1) : (this.position.x -= 0.1);
 		}
 		if (yDraw < yMutationProbability.yProbability) {
 			Math.random() > 0.5 ? (this.position.y += 0.1) : (this.position.y -= 0.1);
+		}
+		if (zDraw < zMutationProbability.zProbability) {
+			Math.random() > 0.5 ? (this.position.z += 0.1) : (this.position.z -= 0.1);
 		}
 	}
 
@@ -116,8 +133,10 @@ class Individual {
 		this.fitness = distanceBetweenTwoPoint(
 			this.position.x,
 			this.position.y,
-			mouse.x * sizes.aspectRatio,
-			mouse.y
+			this.position.z,
+			sphereMesh.position.x,
+			sphereMesh.position.y,
+			sphereMesh.position.z
 		);
 	}
 
@@ -126,25 +145,33 @@ class Individual {
 
 		const intervalX = (this.position.x - parentB.position.x) * crossOverPoint;
 		const intervalY = (this.position.y - parentB.position.y) * crossOverPoint;
+		const intervalZ = (this.position.z - parentB.position.z) * crossOverPoint;
 
 		return new Individual({
 			x: this.position.x - intervalX,
 			y: this.position.y - intervalY,
+			z: this.position.z - intervalZ,
 		});
 	}
 
 	checkCoordinates() {
-		if (this.position.x > 1 * sizes.aspectRatio) {
-			this.position.x = 1 * sizes.aspectRatio;
+		if (this.position.x > 1) {
+			this.position.x = 1;
 		}
-		if (this.position.x < -1 * sizes.aspectRatio) {
-			this.position.x = -1 * sizes.aspectRatio;
+		if (this.position.x < -1) {
+			this.position.x = -1;
 		}
 		if (this.position.y > 1) {
 			this.position.y = 1;
 		}
 		if (this.position.y < -1) {
 			this.position.y = -1;
+		}
+		if (this.position.z > 1) {
+			this.position.z = 1;
+		}
+		if (this.position.z < -1) {
+			this.position.z = -1;
 		}
 	}
 }
@@ -158,7 +185,7 @@ class Population {
 
 	initializePopulation() {
 		for (let i = 0; i < this.nbOfIndividuals; i++) {
-			const randomPos = getRandomCoordinates(1 * sizes.aspectRatio, 1);
+			const randomPos = getRandomCoordinates(1, 1, 1);
 
 			this.population[i] = new Individual(randomPos);
 		}
@@ -263,8 +290,6 @@ window.addEventListener("resize", () => {
 	sizes.aspectRatio = sizes.width / sizes.height;
 
 	camera.aspect = sizes.width / sizes.height;
-	camera.left = -1 * sizes.aspectRatio;
-	camera.right = 1 * sizes.aspectRatio;
 	camera.updateProjectionMatrix();
 
 	// Update renderer
@@ -272,11 +297,59 @@ window.addEventListener("resize", () => {
 	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
+document.addEventListener("keydown", (e) => {
+	if (e.key === "d") {
+		sphereMesh.position.x += 0.05;
+	}
+	if (e.key === "q") {
+		sphereMesh.position.x -= 0.05;
+	}
+	if (e.key === "z") {
+		sphereMesh.position.y += 0.05;
+	}
+	if (e.key === "s") {
+		sphereMesh.position.y -= 0.05;
+	}
+	if (e.key === "c") {
+		sphereMesh.position.z += 0.05;
+	}
+	if (e.key === "v") {
+		sphereMesh.position.z -= 0.05;
+	}
+	console.log(e);
+});
+
 document.addEventListener("mousemove", (e) => {
 	mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
 	mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 });
 
+// Covid sphere
+const basicMaterialSphere = new THREE.MeshStandardMaterial({
+	color: "#86dc3d",
+});
+const sphereGeometry = new THREE.SphereBufferGeometry(0.1, 24, 24);
+
+const sphereMesh = new THREE.Mesh(sphereGeometry, basicMaterialSphere);
+
+scene.add(sphereMesh);
+
+// Line
+const boundaries = [2, 2, 2];
+const geometry = new THREE.BoxGeometry(
+	boundaries[0],
+	boundaries[1],
+	boundaries[2]
+);
+const wireframe = new THREE.EdgesGeometry(geometry);
+const line = new THREE.LineSegments(wireframe);
+
+line.material.color = new THREE.Color(0xffffff);
+line.material.transparent = false;
+scene.add(line);
+line.visible = false;
+
+gui.add(line, "visible");
 /**
  * Camera
  */
