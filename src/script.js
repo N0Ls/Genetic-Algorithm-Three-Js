@@ -403,7 +403,7 @@ const tick = () => {
 	pointLight.position.x = mouse.x * sizes.aspectRatio;
 	pointLight.position.y = mouse.y;
 
-	if (tickCount % 120000) {
+	if (tickCount % 2 == 0) {
 		mainPopulation.computeNextGeneration();
 	}
 	tickCount++;
