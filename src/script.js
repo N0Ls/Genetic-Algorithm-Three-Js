@@ -54,25 +54,30 @@ const distanceBetweenTwoPoint = (x1, y1, z1, x2, y2, z2) => {
 const populationSize = 1000;
 
 //Mutation rates
-let probabilities = {};
-let xMutationProbability = { xProbability: 0.3 };
+let probabilities = {
+	xMutationProbability: 0.3,
+	yMutationProbability: 0.3,
+	zMutationProbability: 0.3,
+	survivalProbability: 2,
+};
+
 const probabilitiesFolder = gui.addFolder("Probabilities");
 probabilitiesFolder.open();
+
 probabilitiesFolder
-	.add(xMutationProbability, "xProbability")
-	.min(0)
-	.max(1)
-	.step(0.001);
-const yMutationProbability = { yProbability: 0.3 };
-probabilitiesFolder
-	.add(yMutationProbability, "yProbability")
+	.add(probabilities, "xMutationProbability")
 	.min(0)
 	.max(1)
 	.step(0.001);
 
-const zMutationProbability = { zProbability: 0.3 };
 probabilitiesFolder
-	.add(yMutationProbability, "yProbability")
+	.add(probabilities, "yMutationProbability")
+	.min(0)
+	.max(1)
+	.step(0.001);
+
+probabilitiesFolder
+	.add(probabilities, "zMutationProbability")
 	.min(0)
 	.max(1)
 	.step(0.001);
@@ -81,8 +86,11 @@ const selectionRate = 0.5;
 const numberOfSurvivors = Math.round(populationSize * selectionRate);
 const sliceIndex = Math.round(populationSize * (1 - selectionRate));
 
-const survivalProbability = { p: 2 };
-probabilitiesFolder.add(survivalProbability, "p").min(1.1).max(10).step(0.1);
+probabilitiesFolder
+	.add(probabilities, "survivalProbability")
+	.min(1.1)
+	.max(10)
+	.step(0.1);
 
 // Sizes object
 const sizes = {
@@ -128,13 +136,13 @@ class Individual {
 		const xDraw = Math.random();
 		const yDraw = Math.random();
 		const zDraw = Math.random();
-		if (xDraw < xMutationProbability.xProbability) {
+		if (xDraw < probabilities.xMutationProbability) {
 			Math.random() > 0.5 ? (this.position.x += 0.1) : (this.position.x -= 0.1);
 		}
-		if (yDraw < yMutationProbability.yProbability) {
+		if (yDraw < probabilities.yMutationProbability) {
 			Math.random() > 0.5 ? (this.position.y += 0.1) : (this.position.y -= 0.1);
 		}
-		if (zDraw < zMutationProbability.zProbability) {
+		if (zDraw < probabilities.zMutationProbability) {
 			Math.random() > 0.5 ? (this.position.z += 0.1) : (this.position.z -= 0.1);
 		}
 	}
@@ -220,7 +228,8 @@ class Population {
 		const survivorArray = [];
 		for (let j = 0; j < this.population.length; j++) {
 			const rdn = Math.random();
-			const proba = j / (this.population.length * survivalProbability.p);
+			const proba =
+				j / (this.population.length * probabilities.survivalProbability);
 			if (rdn < proba) {
 				scene.remove(this.population[j].group);
 			} else {
