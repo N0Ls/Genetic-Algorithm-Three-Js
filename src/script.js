@@ -15,6 +15,7 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x468246);
 
 // Basic material and geometry
 const basicMaterial = new THREE.MeshStandardMaterial({ color: "#b2b6b1" });
@@ -25,6 +26,13 @@ const paramsBasic = {
 };
 gui.addColor(paramsBasic, "color").onChange(() => {
 	basicMaterial.color.set(paramsBasic.color);
+});
+
+const backgroundParams = {
+	color: 0x468246,
+};
+gui.addColor(backgroundParams, "color").onChange(() => {
+	scene.background.set(backgroundParams.color);
 });
 
 // Utils functions
@@ -46,8 +54,10 @@ const distanceBetweenTwoPoint = (x1, y1, z1, x2, y2, z2) => {
 const populationSize = 1000;
 
 //Mutation rates
+let probabilities = {};
 let xMutationProbability = { xProbability: 0.3 };
 const probabilitiesFolder = gui.addFolder("Probabilities");
+probabilitiesFolder.open();
 probabilitiesFolder
 	.add(xMutationProbability, "xProbability")
 	.min(0)
@@ -275,14 +285,6 @@ physicalFolder.add(PBRmaterial, "reflectivity").min(0).max(1).step(0.01);
  * Objects
  */
 
-//Plane
-const plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), PBRmaterial);
-plane.rotation.x = 0;
-plane.position.y = 0;
-plane.position.z = -1;
-
-scene.add(plane);
-
 window.addEventListener("resize", () => {
 	// Update sizes
 	sizes.width = window.innerWidth;
@@ -347,7 +349,7 @@ const line = new THREE.LineSegments(wireframe);
 line.material.color = new THREE.Color(0xffffff);
 line.material.transparent = false;
 scene.add(line);
-line.visible = false;
+line.visible = true;
 
 gui.add(line, "visible");
 /**
